@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node2Vec Complete Process</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+        
+        .step {
+            margin: 40px 0;
+            padding: 30px;
+            border: 3px solid #3498db;
+            border-radius: 15px;
+            background: #f8f9fa;
+            position: relative;
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -20px;
+            left: 30px;
+            background: #3498db;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .step-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            margin-left: 20px;
+        }
+        
+        .step-content {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .step-visual {
+            flex-shrink: 0;
+        }
+        
+        .step-explanation {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .step-explanation p {
+            font-size: 1.1em;
+            margin: 15px 0;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .code-box {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        
+        .node {
+            fill: #3498db;
+            stroke: #2980b9;
+            stroke-width: 2;
+        }
+        
+        .node.highlight {
+            fill: #e74c3c;
+            stroke: #c0392b;
+            stroke-width: 3;
+        }
+        
+        .edge {
+            stroke: #95a5a6;
+            stroke-width: 2;
+        }
+        
+        .path {
+            stroke: #e74c3c;
+            stroke-width: 4;
+            fill: none;
+            stroke-dasharray: 5,5;
+        }
+        
+        .node-label {
+            font-size: 12px;
+            font-weight: bold;
+            fill: white;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        
+        .sequence-box {
+            background: #e8f5e8;
+            border: 2px solid #27ae60;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .vector-box {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        
+        .final-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .final-result h2 {
+            margin-top: 0;
+            font-size: 2em;
+        }
+        
+        .embedding-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .embedding-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Node2Vec: The Complete Process</h1>
+        <p style="text-align: center; font-size: 1.2em; color: #7f8c8d; margin-bottom: 40px;">
+            From Graph to Vector Embeddings in 4 Simple Steps
+        </p>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">Start with a Graph</div>
+            <div class="step-content">
+                <svg class="step-visual" width="250" height="200">
+                    <!-- Original graph -->
+                    <line class="edge" x1="60" y1="60" x2="120" y2="60"/>
+                    <line class="edge" x1="120" y1="60" x2="180" y2="60"/>
+                    <line class="edge" x1="60" y1="60" x2="60" y2="120"/>
+                    <line class="edge" x1="120" y1="60" x2="120" y2="120"/>
+                    <line class="edge" x1="180" y1="60" x2="180" y2="120"/>
+                    <line class="edge" x1="60" y1="120" x2="120" y2="120"/>
+                    <line class="edge" x1="120" y1="120" x2="180" y2="120"/>
+                    <line class="edge" x1="90" y1="160" x2="120" y2="120"/>
+                    <line class="edge" x1="150" y1="160" x2="120" y2="120"/>
+                    
+                    <circle class="node" cx="60" cy="60" r="15"/>
+                    <circle class="node" cx="120" cy="60" r="15"/>
+                    <circle class="node" cx="180" cy="60" r="15"/>
+                    <circle class="node" cx="60" cy="120" r="15"/>
+                    <circle class="node" cx="120" cy="120" r="15"/>
+                    <circle class="node" cx="180" cy="120" r="15"/>
+                    <circle class="node" cx="90" cy="160" r="15"/>
+                    <circle class="node" cx="150" cy="160" r="15"/>
+                    
+                    <text class="node-label" x="60" y="60">A</text>
+                    <text class="node-label" x="120" y="60">B</text>
+                    <text class="node-label" x="180" y="60">C</text>
+                    <text class="node-label" x="60" y="120">D</text>
+                    <text class="node-label" x="120" y="120">E</text>
+                    <text class="node-label" x="180" y="120">F</text>
+                    <text class="node-label" x="90" y="160">G</text>
+                    <text class="node-label" x="150" y="160">H</text>
+                </svg>
+                
+                <div class="step-explanation">
+                    <p>You have a graph with nodes (vertices) and edges (connections).</p>
+                    <p><strong>Examples:</strong></p>
+                    <ul>
+                        <li>Social network (people and friendships)</li>
+                        <li>Web pages and links</li>
+                        <li>Molecules and chemical bonds</li>
+                        <li>Cities and roads</li>
+                    </ul>
+                    <div class="highlight">
+                        Goal: Convert each node into a numerical vector that captures its position and role in the network.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">Generate Random Walks (Using p and q)</div>
+            <div class="step-content">
+                <svg class="step-visual" width="300" height="250">
+                    <!-- Same graph with highlighted path -->
+                    <line class="edge" x1="60" y1="60" x2="120" y2="60"/>
+                    <line class="edge" x1="120" y1="60" x2="180" y2="60"/>
+                    <line class="edge" x1="60" y1="60" x2="60" y2="120"/>
+                    <line class="edge" x1="120" y1="60" x2="120" y2="120"/>
+                    <line class="edge" x1="180" y1="60" x2="180" y2="120"/>
+                    <line class="edge" x1="60" y1="120" x2="120" y2="120"/>
+                    <line class="edge" x1="120" y1="120" x2="180" y2="120"/>
+                    <line class="edge" x1="90" y1="200" x2="120" y2="120"/>
+                    <line class="edge" x1="150" y1="200" x2="120" y2="120"/>
+                    
+                    <!-- Highlighted path -->
+                    <path class="path" d="M 60,60 L 120,60 L 120,120 L 90,200 L 120,120 L 180,120"/>
+                    
+                    <circle class="node" cx="60" cy="60" r="15"/>
+                    <circle class="node" cx="120" cy="60" r="15"/>
+                    <circle class="node" cx="180" cy="60" r="15"/>
+                    <circle class="node" cx="60" cy="120" r="15"/>
+                    <circle class="node" cx="120" cy="120" r="15"/>
+                    <circle class="node" cx="180" cy="120" r="15"/>
+                    <circle class="node" cx="90" cy="200" r="15"/>
+                    <circle class="node" cx="150" cy="200" r="15"/>
+                    
+                    <text class="node-label" x="60" y="60">A</text>
+                    <text class="node-label" x="120" y="60">B</text>
+                    <text class="node-label" x="180" y="60">C</text>
+                    <text class="node-label" x="60" y="120">D</text>
+                    <text class="node-label" x="120" y="120">E</text>
+                    <text class="node-label" x="180" y="120">F</text>
+                    <text class="node-label" x="90" y="200">G</text>
+                    <text class="node-label" x="150" y="200">H</text>
+                    
+                    <text x="150" y="30" text-anchor="middle" font-weight="bold" font-size="14" fill="#e74c3c">Random Walk Path</text>
+                </svg>
+                
+                <div class="step-explanation">
+                    <p>Start from each node and take random walks through the graph.</p>
+                    <p><strong>Key:</strong> Use p and q parameters to bias the walk:</p>
+                    <ul>
+                        <li><strong>p</strong> controls returning to previous node</li>
+                        <li><strong>q</strong> controls exploring close vs. far</li>
+                    </ul>
+                    
+                    <div class="sequence-box">
+                        Example Walk: A → B → E → G → E → F
+                    </div>
+                    
+                    <div class="highlight">
+                        Repeat this process many times for each node to get multiple walks.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-title">Create Training Data (Like Word2Vec)</div>
+            <div class="step-content">
+                <div class="step-visual">
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 10px; border: 2px solid #ffc107;">
+                        <h4 style="margin-top: 0; color: #856404;">From Random Walks:</h4>
+                        <div class="code-box">
+                            Walk 1: A → B → E → G → E → F<br>
+                            Walk 2: B → A → D → E → G<br>
+                            Walk 3: C → B → E → F → H<br>
+                            ...
+                        </div>
+                        
+                        <h4 style="color: #856404;">To Training Pairs:</h4>
+                        <div class="code-box">
+                            (A, B), (A, E), (B, A), (B, E), (B, G)<br>
+                            (E, B), (E, G), (E, F), (G, B), (G, E)<br>
+                            ...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-explanation">
+                    <p>Treat the random walks like sentences and nodes like words.</p>
+                    <p><strong>For each node in a walk:</strong></p>
+                    <ul>
+                        <li>Create pairs with nearby nodes (context window)</li>
+                        <li>These pairs become training data</li>
+                    </ul>
+                    
+                    <div class="highlight">
+                        If two nodes appear together often in walks, they should have similar embeddings.
+                    </div>
+                    
+                    <p><strong>This is exactly like Word2Vec!</strong> Words that appear in similar contexts get similar vectors.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-title">Train Neural Network to Learn Embeddings</div>
+            <div class="step-content">
+                <div class="step-visual">
+                    <svg width="280" height="200">
+                        <!-- Neural network diagram -->
+                        <rect x="20" y="80" width="60" height="40" fill="#3498db" stroke="#2980b9" stroke-width="2" rx="5"/>
+                        <text x="50" y="105" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Input Node</text>
+                        
+                        <rect x="120" y="40" width="60" height="30" fill="#e74c3c" stroke="#c0392b" stroke-width="2" rx="5"/>
+                        <rect x="120" y="85" width="60" height="30" fill="#e74c3c" stroke="#c0392b" stroke-width="2" rx="5"/>
+                        <rect x="120" y="130" width="60" height="30" fill="#e74c3c" stroke="#c0392b" stroke-width="2" rx="5"/>
+                        <text x="150" y="60" text-anchor="middle" fill="white" font-size="10">Hidden</text>
+                        <text x="150" y="105" text-anchor="middle" fill="white" font-size="10">Layer</text>
+                        <text x="150" y="150" text-anchor="middle" fill="white" font-size="10">(Embedding)</text>
+                        
+                        <rect x="220" y="80" width="60" height="40" fill="#27ae60" stroke="#229954" stroke-width="2" rx="5"/>
+                        <text x="250" y="100" text-anchor="middle" fill="white" font-size="10">Predict</text>
+                        <text x="250" y="115" text-anchor="middle" fill="white" font-size="10">Context</text>
+                        
+                        <!-- Arrows -->
+                        <path d="M 80,100 L 120,100" stroke="#2c3e50" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                        <path d="M 80,100 L 120,55" stroke="#2c3e50" stroke-width="1" fill="none"/>
+                        <path d="M 80,100 L 120,145" stroke="#2c3e50" stroke-width="1" fill="none"/>
+                        
+                        <path d="M 180,55 L 220,100" stroke="#2c3e50" stroke-width="1" fill="none"/>
+                        <path d="M 180,100 L 220,100" stroke="#2c3e50" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                        <path d="M 180,145 L 220,100" stroke="#2c3e50" stroke-width="1" fill="none"/>
+                        
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+                
+                <div class="step-explanation">
+                    <p><strong>Neural Network Training:</strong></p>
+                    <ul>
+                        <li>Input: A node (like node A)</li>
+                        <li>Output: Predict its context nodes (B, D, E...)</li>
+                        <li>Hidden layer weights = Node embeddings!</li>
+                    </ul>
+                    
+                    <div class="code-box">
+                        # Simplified training process<br>
+                        for (center_node, context_node) in training_pairs:<br>
+                        &nbsp;&nbsp;prediction = model(center_node)<br>
+                        &nbsp;&nbsp;loss = compute_loss(prediction, context_node)<br>
+                        &nbsp;&nbsp;update_embeddings(loss)
+                    </div>
+                    
+                    <div class="highlight">
+                        After training, each node has a vector that captures its network position and relationships.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="final-result">
+            <h2>🎉 Final Result: Node Embeddings</h2>
+            <p>Each node now has a vector representation (e.g., 128 dimensions)</p>
+            
+            <div class="embedding-grid">
+                <div class="embedding-item">
+                    <strong>Node A:</strong><br>
+                    [0.23, -0.45, 0.78, 0.12, ...]
+                </div>
+                <div class="embedding-item">
+                    <strong>Node B:</strong><br>
+                    [0.19, -0.52, 0.81, 0.08, ...]
+                </div>
+                <div class="embedding-item">
+                    <strong>Node C:</strong><br>
+                    [-0.34, 0.67, -0.23, 0.91, ...]
+                </div>
+                <div class="embedding-item">
+                    <strong>Applications:</strong><br>
+                    • Node classification<br>
+                    • Link prediction<br>
+                    • Graph clustering<br>
+                    • Recommendation systems
+                </div>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 1.2em;">
+                <strong>Key Insight:</strong> Nodes with similar network roles or positions get similar vectors!
+            </p>
+        </div>
+    </div>
+</body>
+</html>
